@@ -1,0 +1,100 @@
+﻿@page "/Datos del Alumno"
+@inject HttpClient _http;
+@inject NavigationManager _navegar;
+<h3>Personas</h3>
+@if (cargando)
+{
+    <div class="spinner-border" role="status">
+        <span class="visually-hidden">Cargando...</span>
+    </div>
+}
+else
+{
+    @if (laspersonas != null && laspersonas.Count > 0)
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Correo</th>
+                    <th>Teléfono</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var persona in laspersonas)
+                {
+                    <tr>
+                        <td>@persona.Nombre</td>
+                        <td>@persona.Correo</td>
+                        <td>@persona.Telefono</td>
+                        <td>
+                            <button class="btn btn-sm" @onclick="()=>Eliminar(persona.Id)"><span class="oi oi-trash"></span></button>
+                            <button class="btn btn-sm" @onclick="()=>Modificar(persona.Id)"><span class="oi oi-pencil"></span></button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <h2>No existen personas registradas</h2>
+    }
+}
+
+
+@code {
+    private List<Persona>? laspersonas;
+    private bool cargando = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Cargar();
+    }
+
+    private async Task Cargar()
+    {
+        try
+        {
+            laspersonas = await _http.GetFromJsonAsync<List<Persona>>("api/persona");
+        }
+        catch (Exception ex)
+        {
+           
+            Console.WriteLine($"Error al cargar las personas: {ex.Message}");
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task Eliminar(int id)
+    {
+        cargando = true;
+        try
+        {
+            await _http.DeleteAsync($"api/persona/{id}");
+            await Cargar();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al eliminar la persona: {ex.Message}");
+            cargando = false;
+        }
+    }
+
+    private void Modificar(int id)
+    {
+        _navegar.NavigateTo($"/nueva/{id}");
+    }
+
+    public class Persona
+    {
+        public int Id { get; set; }
+        public string? Nombre { get; set; }
+        public string? Telefono { get; set; }
+        public string? Correo { get; set; }
+    }
+}
